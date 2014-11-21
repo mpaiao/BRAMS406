@@ -1245,7 +1245,7 @@ $MODEL_OPTIONS
       !           DTLONG.                                                                  !
       ! NDTVEG -- Time nesting for vegetation fluxes and thermodynamic state.              !
       !------------------------------------------------------------------------------------!
-      ISFCL  =   5,
+      ISFCL  =   4,
       DTLEAF = 10.,
       NDTVEG =   5,
       !------------------------------------------------------------------------------------!
