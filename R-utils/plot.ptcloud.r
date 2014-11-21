@@ -3,7 +3,7 @@
 #     This function plots a point cloud in 3-D, with colours representing the Z dimension. #
 #------------------------------------------------------------------------------------------#
 plot.ptcloud <<- function( pt.cloud
-                         , col.intensity    = FALSE
+                         , col.variable     = c("z","intensity","pt.class")
                          , cex.intensity    = TRUE
                          , xlim             = NULL
                          , ylim             = NULL
@@ -20,7 +20,7 @@ plot.ptcloud <<- function( pt.cloud
                          , colour.palette   = cm.colors
                          , col              = NULL
                          , na.col           = "grey94"
-                         , key.log          = if(is.null(cc)){zlog}else{FALSE}
+                         , key.log          = if(col.variable %in% "z"){zlog}else{FALSE}
                          , key.vertical     = TRUE
                          , key.axis.options = NULL
                          , key.options      = NULL
@@ -47,6 +47,7 @@ plot.ptcloud <<- function( pt.cloud
                          , n.dens           = 512
                          , from.dens        = NULL
                          , to.dens          = NULL
+                         , skip.dens        = NULL
                          , col.dens         = c("grey10","grey60")
                          , lwd.dens         = c(2,2)
                          , lty.dens         = c("solid","solid")
@@ -57,6 +58,12 @@ plot.ptcloud <<- function( pt.cloud
                          , ...
                          ){
 
+
+
+   #----- Standardise the colour and cex variables. ---------------------------------------#
+   col.variable = match.arg(col.variable)
+   if (col.variable %in% "pt.class") key.log = FALSE
+   #---------------------------------------------------------------------------------------#
 
 
 
@@ -88,13 +95,11 @@ plot.ptcloud <<- function( pt.cloud
       x = pt.cloud$x
       y = pt.cloud$y
       z = pt.cloud$z
-      idx = which(substring(names(pt.cloud),1,3) %in% "int")
-      if (length(idx) == 1){
-         i = pt.cloud[[idx]]
-      }else{
-         i = pt.cloud$intensity
-      }#end if
+      i = pt.cloud$intensity
+      p = pt.cloud$pt.class
       #------------------------------------------------------------------------------------#
+
+
 
 
       #----- Check that x, y, and z were given. -------------------------------------------#
@@ -114,12 +119,13 @@ plot.ptcloud <<- function( pt.cloud
 
 
       #----- Intensity must be given in case it will be used to colour or scale points. ---#
-      if (is.null(i) && (col.intensity || cex.intensity || plot.density)){
-         cat  ("--------------------------------------------------------","\n")
-         cat  ("     Variable pt.cloud does not have intensity."         ,"\n")
-         cat  ("     Provide intensity as well, or set col.intensity,"   ,"\n")
-         cat  (" cex.intensity, and plot.density to FALSE"               ,"\n")
-         cat  ("--------------------------------------------------------","\n")
+      col.intensity = col.variable %in% "intensity"
+      if (is.null(i) && (cex.intensity || plot.density)){
+         cat  ("------------------------------------------------------------","\n")
+         cat  ("     Variable pt.cloud does not have intensity."             ,"\n")
+         cat  ("     Provide intensity as well, or set col.variable to z or" ,"\n")
+         cat  (" pt.class, and cex.intensity and plot.density to FALSE."     ,"\n")
+         cat  ("------------------------------------------------------------","\n")
          stop ("Intensity is missing from point cloud")
       }else if (is.null(i)){
          #----- Make a dummy intensity. ---------------------------------------------------#
@@ -129,14 +135,34 @@ plot.ptcloud <<- function( pt.cloud
       #------------------------------------------------------------------------------------#
 
 
+
+
+      #----- pt.class must be given in case it will be used to colour or scale points. ----#
+      col.pt.class = col.variable %in% "pt.class"
+      if (is.null(p) && col.pt.class){
+         cat  ("--------------------------------------------------------","\n")
+         cat  ("     Variable pt.cloud does not have pt.class. "         ,"\n")
+         cat  ("     Provide pt.class as well, or set col.variable to"   ,"\n")
+         cat  (" z or intensity."                                        ,"\n")
+         cat  ("--------------------------------------------------------","\n")
+         stop ("Point class is missing from point cloud")
+      }else if (is.null(i)){
+         #----- Make a dummy intensity. ---------------------------------------------------#
+         p = 0*x + 1
+         #---------------------------------------------------------------------------------#
+      }#end if (is.null(i))
+      #------------------------------------------------------------------------------------#
+
+
       #----- Make sure the length of all four variables is the same. ----------------------#
-      npts = unique(c(length(x),length(y),length(z),length(i)))
+      npts = unique(c(length(x),length(y),length(z),length(i),length(p)))
       if (length(npts) != 1){
          cat  ("--------------------------------------------------------","\n")
          cat  ("  LENGTH(x) = ",length(x)                                ,"\n")
          cat  ("  LENGTH(y) = ",length(y)                                ,"\n")
          cat  ("  LENGTH(z) = ",length(z)                                ,"\n")
          cat  ("  LENGTH(i) = ",length(i)                                ,"\n")
+         cat  ("  LENGTH(p) = ",length(p)                                ,"\n")
          cat  ("  All variables above must have the same length."        ,"\n")
          cat  ("--------------------------------------------------------","\n")
          stop (" Variable pt.cloud has multiple lengths for elements.")
@@ -160,7 +186,9 @@ plot.ptcloud <<- function( pt.cloud
    y  = y [o]
    z  = z [o]
    i  = i [o]
-   if (col.intensity){cc = i}else{ cc = z}
+   p  = p [o]
+   p  = ifelse(p %in% asprs.val,p,1)
+   if (col.intensity){cc = i}else{cc = z}
    #---------------------------------------------------------------------------------------#
 
 
@@ -172,46 +200,51 @@ plot.ptcloud <<- function( pt.cloud
    #---------------------------------------------------------------------------------------#
 
 
-
-
-
    #---------------------------------------------------------------------------------------#
-   #     Set default limits for x, y, z, and colour fields.                                #
+   #     Set default limits for x, y, z.                                                   #
    #---------------------------------------------------------------------------------------#
    if (is.null(xlim)) xlim = range(x ,finite=TRUE)
    if (is.null(ylim)) ylim = range(y ,finite=TRUE)
    if (is.null(zlim)) zlim = range(z ,finite=TRUE)
-   if (is.null(clim)) clim = range(cc,finite=TRUE)
-   if (is.null(levels) && key.log){
-      levels = sort(unique(pretty.log(x=clim,n=nlevels,forgelog=TRUE)))
-   }else if (is.null(levels)){
-      levels = sort(unique(pretty    (x=clim,n=nlevels)))
+   #---------------------------------------------------------------------------------------#
+
+
+
+
+   #---------------------------------------------------------------------------------------#
+   #    Split colour field into the breaks defined by the colour palette.                  #
+   #---------------------------------------------------------------------------------------#
+   if (col.pt.class){
+      #----- List classes that were actually used. ----------------------------------------#
+      class.show = sort(unique(p))
+      class.leg  = asprs.leg[match(class.show,asprs.val)]
+      col        = asprs.col[match(class.show,asprs.val)]
+      levels     = c(0,seq_along(class.show))
+      class.at   = mid.points(levels)
+      #------------------------------------------------------------------------------------#
+
+      #----- Set colour classes. ----------------------------------------------------------#
+      ccol       = asprs.col[match(p,asprs.val)]
+      #------------------------------------------------------------------------------------#
+   }else{
+      #----- Set colour palette for colour field. -----------------------------------------#
+      if (is.null(clim)) clim = range(cc,finite=TRUE)
+      if (is.null(levels) && key.log){
+         levels = sort(unique(pretty.log(x=clim,n=nlevels,forcelog=TRUE)))
+      }else if (is.null(levels)){
+         levels = sort(unique(pretty    (x=clim,n=nlevels)))
+      }#end if
+      if (is.null(col)) col = colour.palette(length(levels)-1)
+      #------------------------------------------------------------------------------------#
+
+
+      #----- Split the colours according to the cc field. ---------------------------------#
+      ccut              = cut(cc,breaks=levels)
+      clev              = levels(ccut)
+      ccol              = col[match(ccut,clev)]
+      ccol[is.na(ccol)] = na.col
+      #------------------------------------------------------------------------------------#
    }#end if
-   if (is.null(col)) col = colour.palette(length(levels)-1)
-   #---------------------------------------------------------------------------------------#
-
-
-
-
-   #---------------------------------------------------------------------------------------#
-   #    Split colour field into the breaks defined by the colour palette.                  #
-   #---------------------------------------------------------------------------------------#
-   ccut              = cut(cc,breaks=levels)
-   clev              = levels(ccut)
-   ccol              = col[match(ccut,clev)]
-   ccol[is.na(ccol)] = na.col
-   #---------------------------------------------------------------------------------------#
-
-
-
-
-   #---------------------------------------------------------------------------------------#
-   #    Split colour field into the breaks defined by the colour palette.                  #
-   #---------------------------------------------------------------------------------------#
-   ccut              = cut(cc,breaks=levels)
-   clev              = levels(ccut)
-   ccol              = col[match(ccut,clev)]
-   ccol[is.na(ccol)] = na.col
    #---------------------------------------------------------------------------------------#
 
 
@@ -298,7 +331,9 @@ plot.ptcloud <<- function( pt.cloud
          #---------------------------------------------------------------------------------#
 
          #----- Check whether there are specific instructions for plotting the key axis. --#
-         if (missing(key.axis.options)) {
+         if (col.pt.class && is.null(key.axis.options)){
+            key.now = list(side=4,las=1,at=class.at,labels=class.leg)
+         }else if (is.null(key.axis.options)){
             key.now = list(side=4,las=1,...)
          }else{
             key.now = modifyList(x=key.axis.options,val=list(side=4,las=1))
@@ -322,7 +357,9 @@ plot.ptcloud <<- function( pt.cloud
 
 
          #----- Check whether there are specific instructions for plotting the key axis. --#
-         if (missing(key.axis.options)) {
+         if (col.pt.class && is.null(key.axis.options)){
+            key.now = list(side=1,las=1,at=class.at,labels=class.leg)
+         }else if (is.null(key.axis.options)){
             key.now = list(side=1,las=1,...)
          }else{
             key.now = modifyList(x=key.axis.options,val=list(side=1,las=1))
@@ -475,11 +512,53 @@ plot.ptcloud <<- function( pt.cloud
 
 
    #---------------------------------------------------------------------------------------#
-   #     Plot other options.  Check use a shared list, or one list for each sub-plot.      #
+   #     Plot other options.  This should be a list, one list element for each sub-plot.   #
    #---------------------------------------------------------------------------------------#
    n.after = length(plot.after)
    for (a in sequence(n.after)){
-       do.call(what=names(plot.after)[a],args=plot.after[[a]])
+      plot.now  = plot.after[[a]]
+      plot.name = names(plot.after[a])
+      if (plot.name %in% c("points","lines","text")){
+         #---- Retrieve the coordinates. --------------------------------------------------#
+         if (! all(c("x","y","z") %in% names(plot.now))){
+            xyz = plot.now[[1]]
+            if ((is.list(xyz) || is.data.frame(xyz)) && length(xyz) >= 3){
+               if (all(c("x","y","z") %in% names(xyz))){
+                  x3d = xyz$x
+                  y3d = xyz$y
+                  z3d = xyz$z
+               }else{
+                  x3d = xyz[[1]]
+                  y3d = xyz[[2]]
+                  z3d = xyz[[3]]
+               }#end if
+            }else if (is.matrix(xyz) && ncol(xyz) >= 3){
+               x3d = xyz[,1]
+               y3d = xyz[,2]
+               z3d = xyz[,3]
+            }else{
+               cat ("------------------------------------------------------","\n",sep="")
+               cat (" In plot.after, command ",plot.name,":"                ,"\n",sep="")
+               cat (" Missing arguments! x, y, and z must be provided!"     ,"\n",sep="")
+               cat ("------------------------------------------------------","\n",sep="")
+               stop(" Missing arguments")
+            }#end if
+         }else{
+            x3d = plot.now$x
+            y3d = plot.now$y
+            z3d = plot.now$z
+         }#end if
+         #---------------------------------------------------------------------------------#
+
+
+         #------ Transform the coordinates. -----------------------------------------------#
+         xyz=trans3d(x=x3d,y=y3d,z=z3d,pmat=pout)
+         plot.now = modifyList(x=plot.now,val=list(x=xyz$x,y=xyz$y,z=NULL))
+         do.call(what=plot.name,args=plot.now)
+         #---------------------------------------------------------------------------------#
+      }else{
+         do.call(what=plot.name,args=plot.now)
+      }#end if
    }#end for (a in sequence(n.after))
    #---------------------------------------------------------------------------------------#
 
@@ -522,6 +601,7 @@ plot.ptcloud <<- function( pt.cloud
       }else if (is.null(from.dens)){
          from.dens = to.dens / n.dens
       }#end if
+      if (is.null(skip.dens)) skip.dens = quantile(x=z,probs=0.10,na.rm=TRUE)
       if (is.null(zzdens) && zlog){
          zdens  = density(x=log(z),n=n.dens,from=log(from.dens),to=log(to.dens))
          xdens  = zdens$y
@@ -539,11 +619,6 @@ plot.ptcloud <<- function( pt.cloud
          xdens  = zzdens$y
          ydens  = zzdens$x
       }#end if
-
-
-
-      #----- Expand z to scale height with intensity. -------------------------------------#
-      zi = rep(x=z,times=i)
       #------------------------------------------------------------------------------------#
 
 
@@ -555,6 +630,7 @@ plot.ptcloud <<- function( pt.cloud
          mhdens = macarthur.horn( pt.cloud = pt.cloud
                                 , zl       = from.dens
                                 , zh       = to.dens
+                                , zo       = skip.dens
                                 , nz       = n.dens
                                 )#end macarthur.horn
          if (zlog){

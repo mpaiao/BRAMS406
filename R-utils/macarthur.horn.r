@@ -137,7 +137,7 @@ macarthur.horn <<- function(pt.cloud,zl,zh,zo=zl,nz){
    #     Smooth the curve by generating a density function.  This density function becomes #
    # the output.                                                                           #
    #---------------------------------------------------------------------------------------#
-   dzbar = mean(diff(deltaz))
+   dzbar = mean(diff(zmid))
    zmah  = jitter( x      = sample(x=zmid,size=int.tot,replace=TRUE,prob=lad)
                  , amount = 0.5*dzbar
                  )#end jitter

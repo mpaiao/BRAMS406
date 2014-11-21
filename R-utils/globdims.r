@@ -67,6 +67,27 @@ igbp.val <<- seq_along(igbp.col)-1
 
 
 
+#------ Define the colours and labels for ASPRS (LAS/LiDAR) classes. ----------------------#
+asprs.col <<- c( CNC = RGB( 222, 222, 222)
+               , UND = RGB( 202, 202, 202)
+               , GND = RGB( 144,   3,   2)
+               , LVG = RGB( 166, 131,   0)
+               , MVG = RGB(   0, 100, 164)
+               , HVG = RGB(   0,  63,   0)
+               , BLD = RGB(  96,  96,  96)
+               , MKP = RGB( 233, 198,   9)
+               , H2O = RGB(   0,  20,  82)
+               , RSV = RGB( 192, 192, 192)
+               , R11 = RGB( 192, 192, 192)
+               , OLP = RGB(   0, 222, 255)
+               )#end asprs.col
+asprs.leg <<- names(asprs.col)
+asprs.val <<- seq_along(asprs.col)-1
+#------------------------------------------------------------------------------------------#
+
+
+
+
 #----- Define some default legend colours and names. --------------------------------------#
 lunames   <<- c("Agricultural","Plantation","Tree fall"
                ,"Burnt","Abandoned","Logged","Total")
