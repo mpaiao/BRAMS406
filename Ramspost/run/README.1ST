@@ -1,0 +1,34 @@
+To set up the ramspost with one file per time:
+
+1. Copy or create a link of your ramspost executable here.
+2. Edit 1eachtime-sigma.sh. There you must change at least two variables:
+   a. Variable ramspost by your link
+   b. Create a scratch directory where the files can be copied during the process and
+      set the directory at tmpfolder variable.
+3. Edit ramspost.inp. There you will set up the variables as if you were going to run the
+   normal ramspost. The only requirement is that FPREFIX must contain the absolute path. 
+   The output can be in a subdirectory (which must be created beforehand), and the binaries
+   will be output there and the template will access the files from the current directory.
+----------------------------------------
+   
+   
+
+
+FPREFIX - The prefix of the analysis files (BRAMS output), make sure to include the
+          -A- or the -L- depending on whether you had full or light analysis.
+
+NVP - number of variables to be converted
+VP  - list of variables.  Many new variables are now available, and some of them were 
+      changed to reflect the new dimensions of some cumulus-related variables. There is
+      no manual for this, unfortunately, but all variables are declared at 
+      src/variables.f90.  Also, the example ramspost.inp is a useful starting point.
+
+GPREFIX - prefix for GrADS files
+PROJ - 'YES' will convert the grid to regular lon-lat (beware that class variables may
+       look strange)
+       'NO' will make the file without interpolation so the longitude and latitude won't
+       be the real ones.  This only affect the visualisation, STILT won't use these files
+       and knows what to do with the projection.
+
+I recommend not changing the other variables... 
+

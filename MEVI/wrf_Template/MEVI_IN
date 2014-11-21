@@ -1,0 +1,68 @@
+&MEVI_OPTIONS
+
+!------------------------------------------------------------------------------------------!
+!  General options                                                                         !
+!------------------------------------------------------------------------------------------!
+   NL%INTYPE = 'wrf'     ! Type of input data. Available options are (case insensitive):
+                         ! -> RAMS   - RAMS or BRAMS files
+                         ! -> WRF    - WRF netcdf files
+                         ! -> GRADS  - GrADS files
+                         ! -> HDF5   - Generic HDF5 file (don't use this for RAMS HDF5)
+                         ! -> NETCDF - Generic NetCDF file (don't use this for WRF NetCDF)
+
+   NL%OUTTYPE = 'vis5d' ! Type of output data. Available options are (case insensitive):
+                        ! -> Vis5D  - Vis5D (Vis5D+) files
+                        ! -> GRADS  - GrADS files
+                       
+!------------------------------------------------------------------------------------------!
+!    Prefix for input files. If you prefer, you can create a file containing the list of   !
+! files (with full path) you want. This file must be called filelist.inp, and in this case !
+! NL%INPREF should be set as '(Path)/filelist.inp. For BRAMS original vfm, list only the   !
+! -head.txt files.                                                                         !
+!------------------------------------------------------------------------------------------!
+   NL%INPREF = './input_wrf/filelist.inp'
+!   NL%INPREF = './input_wrf/wrfrst'
+!   NL%INPREF = './input_rams/20S0-dry-16km-A-'
+
+!----- Prefix for output files ------------------------------------------------------------!
+   NL%OUTPREF='./myoutput'
+   
+!------------------------------------------------------------------------------------------!
+!     Variable and grid configuration                                                      !
+!------------------------------------------------------------------------------------------!
+   NL%NVARS = 9    ! Number of variables to include in the output
+   
+!------------------------------------------------------------------------------------------!
+!    Variables to include. If you are running from (B)RAMS and WRF use the look-up         !
+! table, otherwise make sure to include only variables that are present in the file...     !
+!------------------------------------------------------------------------------------------!
+   NL%VARS = 'U','V','W','PH','CHIQUITA_BACANA','T','RAINC','RAINNC','ZS'
+   !NL%VARS  = 'UE_AVG','VE_AVG','W_AVG','TEMPC','RV','TKE','ACCCON','TOTPCP'
+
+   NL%VERTCOORD = 0  ! Vertical coordinate for output:
+                     ! 0. Native coordinate
+                     ! 1. Pressure
+                     ! 2. Height
+
+   NL%NLEVELS   = 22 ! Number of vertical levels for output. If you are using native 
+                     !    coordinates, then it will use the minimum between the total 
+                     !    number of layers and NLEVELS
+   
+   !----- Vertical levels. If using native coordinates this will be ignored ---------------!
+   NL%VERTLEVELS = 1000., 925., 850., 775., 700., 650., 600., 550., 500., 400., 350., 
+                    300., 250., 200., 150., 100., 92.5,  85., 77.5,  70.,  65.,  60.
+
+   !----- Boundaries to be included -------------------------------------------------------!
+   NL%LONW = -120. ! Westermost   longitude allowed to be included;
+   NL%LONE =  -25. ! Easternmost  longitude allowed to be included;
+   NL%LATS =  -66. ! Southernmost latitude  allowed to be included;
+   NL%LATN =   23. ! Northernmost latitude  allowed to be included;
+
+   !----- These variables are used by (B)RAMS output only ---------------------------------!
+   NL%VFMFRMT = .true.      ! (B)RAMS data is in VFM : (.true./.false.)
+                            !     if false, assume hdf5.
+
+   NL%POLAR2LONLAT = .true. ! Interpolate data to regular lon/lat (.true./.false.)
+    
+
+/ ! End of MEVI_OPTIONS namelist

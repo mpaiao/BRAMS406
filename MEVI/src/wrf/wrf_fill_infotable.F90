@@ -1,0 +1,401 @@
+!==========================================================================================!
+!==========================================================================================!
+!  MEVI. Subroutine wrf_fill_infotable                                                     !
+!                                                                                          !
+!     This subroutine will loop through the WRF files, and fill the information table with !
+! the information retrieved from the netcdf files. Here we will follow RAMS notation as    !
+! sort of standard. After the WRF variables are read, they will be inline with RAMS to     !
+! ease the output step. Note that this subroutine will do something only if netcdf libra-  !
+! ries are loaded, otherwise this subroutine will be a dummy one.                          !
+!==========================================================================================!
+!==========================================================================================!
+subroutine wrf_fill_infotable(flnm)
+   !---------------------------------------------------------------------------------------!
+   !    This subroutine reads the RAMS/BRAMS header files, seeking information on avail-   !
+   ! able variables, and their properties such as dimensions, position, etc.               !
+   !---------------------------------------------------------------------------------------!
+   use mod_maxdims    , only : maxstr,maxfiles,maxrank
+   use mod_model      , only : if_adap,ngrids,nzg,nzs,nclouds,nwave,naddsc,npatch,polelon  &
+                              ,polelat,centlon,centlat,nnxp,nnyp,nnzp,this_time,zero_time
+   use an_header      , only : nfiles, info_table, alloc_anheader, nullify_anheader
+   use mod_ioopts     , only : outtimes,nouttimes
+#if USE_NCDF
+   use mod_netcdf     , only : ncid,ndimensions,nvariables,nglobals,unlimiteddimid         &
+                              ,xtype,timeid,dummy_vname,ndims,dimids,natts,dimglobal       &
+                              ,globalid
+   use mod_ncdf_globio, only : ncdf_load_err
+   use netcdf
+#endif
+   implicit none
+
+   character(len=maxstr) , intent(in)          :: flnm        ! File prefix
+
+#if USE_NCDF
+   character(len=maxstr)                       :: flnm_full   ! Scratch w/ prefix & suffix
+   character(len=maxstr) , dimension(maxfiles) :: fnames      ! File name list
+   integer                                     :: na,nd,nf    ! Various counters
+   integer                                     :: nv, nt,tcnt ! Various counters
+   integer               , pointer             :: ifm         ! Shortcut to current grid
+   integer                                     :: nvbtab      ! Scratch for var count
+   integer                                     :: itrim       ! String length
+   logical                                     :: readlist    ! Flag for file list reading
+   integer                                     :: ierr        ! Error flag.
+   integer                                     :: ngrid       ! Error flag.
+   integer                                     :: ntimes      ! Shortcut for # of times/file
+
+   !----- Deallocating table if necessary, it will be allocated soon. ---------------------!
+   if(allocated(info_table)) deallocate(info_table)
+
+   !----- Initialising the number of times ------------------------------------------------!
+   nouttimes = 0
+
+   !---------------------------------------------------------------------------------------!
+   !     Finding out how many data files I have:                                           !
+   !---------------------------------------------------------------------------------------!
+   itrim = len_trim(flnm)
+   select case (flnm(itrim-11:itrim))
+   case ('filelist.inp')
+      !----- The input is in a file, so I will read this file -----------------------------!
+      flnm_full=trim(flnm)
+      readlist=.true.
+   case default
+      !----- Use internal procedures to determine the files -------------------------------!
+      flnm_full=trim(flnm)//'_d*'
+      readlist=.false.
+   end select
+   call filelist_f(fnames,flnm_full,nfiles,readlist)
+
+   !----- Now I will allocate the variable table accordingly ------------------------------!
+   allocate (info_table(nfiles))
+
+   !----- Loop through the files and store the variable info ------------------------------!
+   fileloop: do nf=1,nfiles
+      write (unit=*,fmt='(a,1x,2a)') ' [+] Opening file :',trim(fnames(nf)),'...'
+
+      !----- Opening the file -------------------------------------------------------------!
+      ierr = nf90_open(fnames(nf),NF90_NOWRITE,ncid)
+      if (ierr /= NF90_NOERR) then
+         call ncdf_load_err(ierr)
+         call fatal_error ('Error opening the file '//trim(fnames(nf))//'...'              &
+                          ,'wrf_fill_infotable','wrf_fill_infotable.F90'                   ) 
+      end if
+
+
+      !----- Reading the header and extracting the file main dimensions -------------------!
+      ierr = nf90_inquire(ncid,ndimensions,nvariables,nglobals,unlimiteddimid)
+      info_table(nf)%filename = fnames(nf)
+      info_table(nf)%nvars    = nvariables
+      
+      !----- Getting some global arguments ------------------------------------------------!
+      write (unit=*,fmt='(a)') '     - Loading global attributes and dimensions...'
+      call commio_wrf(ngrid,ntimes)
+      info_table(nf)%ngrids    = ngrids
+      info_table(nf)%ntimes    = ntimes
+      info_table(nf)%init_time = zero_time
+      
+      !----- Initialising the analysis structure for this file ----------------------------!
+      call nullify_anheader(info_table(nf))
+      call alloc_anheader(info_table(nf))
+      info_table(nf)%avail_grid(:)       = .false.
+      info_table(nf)%avail_grid(ngrid)   = .true.
+      info_table(nf)%file_time(1:ntimes) = this_time(1:ntimes)
+
+      !----- Adding the new times into the outtimes array ---------------------------------!
+      tcnt=0
+      addtimeloop: do nt=1,ntimes
+         !----- I will only add times that were not there before --------------------------!
+         if (nouttimes > 0) then
+           if (any(outtimes(1:nouttimes)%elapsed == this_time(nt)%elapsed))                &
+              cycle addtimeloop
+         end if
+         tcnt=tcnt+1
+         outtimes(nouttimes+tcnt) = this_time(nt)
+      end do addtimeloop
+      !----- Updating time and sorting them up --------------------------------------------!
+      nouttimes = nouttimes + tcnt
+      call sort_time(nouttimes,outtimes(1:nouttimes))
+
+      !----- Getting the variable information----------------------------------------------!
+      write (unit=*,fmt='(a)') ' '
+      write (unit=*,fmt='(a)') '-----------------------------------------------------------'
+      write (unit=*,fmt='(a)') ' - Loading variable table...'
+
+      do nv=1,nvariables
+         call wrf_load_var_table(nv,ngrid                                                  &
+                             ,info_table(nf)%varname(nv)  , info_table(nf)%npointer(nv)    &
+                             ,info_table(nf)%idim_type(nv), info_table(nf)%ngrid(nv)       &
+                             ,info_table(nf)%nvalues(nv)  , info_table(nf)%rank(nv)        &
+                             ,info_table(nf)%dims(:,nv)   , info_table(nf)%stagger(:,nv)   )
+         write (unit=*,fmt='(a,1x,a,1x,2(a,1x,i6,1x))') &
+            '    [|] Retrieving:',info_table(nf)%varname(nv)                               &
+           , 'idim_type=',info_table(nf)%idim_type(nv),'rank=',info_table(nf)%rank(nv)
+      end do
+      
+      !----- Closing the file. It will be opened again later when we will read the data ---!
+      ierr = nf90_close(ncid)
+      if (ierr /= NF90_NOERR) then
+         call ncdf_load_err(ierr)
+         call fatal_error ('Error closing the file '//trim(fnames(nf))//'...'              &
+                          ,'wrf_fill_infotable','wrf_fill_infotable.F90'                   ) 
+      end if
+
+   end do fileloop
+#endif
+
+   return
+end subroutine wrf_fill_infotable
+!==========================================================================================!
+!==========================================================================================!
+
+
+
+
+
+
+!==========================================================================================!
+!==========================================================================================!
+subroutine wrf_load_var_table(nv,current_grid,varname,npointer,idim_type,ngrid,nvalues     &
+                             ,rank,dims,stagger)
+   use mod_maxdims    , only : maxrank,maxstr
+#if USE_NCDF
+   use netcdf
+   use mod_netcdf     , only : ncid,nvariables,varid,xtype,dummy_vname,ndims,dimids,natts  &
+                              ,idnnxp,idnnyp,idnnzp ,idtimes,idnpatch,idnclouds,idnnxpst   &
+                              ,idnnypst,idnnzpst,idnzg
+   use mod_ioopts     , only : missflg_int,missflg_real,missflg_char
+   use mod_model      , only : nnxp,nnyp,nnzp,nwave,nclouds,npatch,nzg,nzs
+   use mod_ncdf_globio, only : ncdf_load_err
+#endif
+   implicit none
+
+   integer                    , intent(in)  :: nv, current_grid
+   character(len=*)           , intent(out) :: varname
+   integer                    , intent(out) :: npointer,idim_type,ngrid,nvalues,rank
+   integer, dimension(maxrank), intent(out) :: dims
+   logical, dimension(maxrank), intent(out) :: stagger
+   !----- Local variables -----------------------------------------------------------------!
+   integer                                  :: ierr
+   character(len=maxstr)                    :: memorder,stagdim
+   !---------------------------------------------------------------------------------------!
+   !   
+#if USE_NCDF
+   ierr = nf90_inquire_variable(ncid,nv,varname,xtype,ndims,dimids,natts)
+   
+   !----- Crash in case something went wrong ----------------------------------------------!
+   if (ierr /= NF90_NOERR) then
+      call ncdf_load_err(ierr)
+      call fatal_error ('Unable to get variable information for variable '//               &
+                        trim(varname)//'...','wrf_load_var_table','wrf_fill_infotable.F90')
+   end if
+   
+   !---- The following variables are just for BRAMS files, fill it with anything ----------! 
+   npointer  = missflg_int
+   nvalues   = missflg_int
+   ngrid     = current_grid
+   
+   !---- Initialising dims and stagger with "default" values ------------------------------!
+   stagger   = .false.
+   dims      = 1
+   idim_type = 99
+
+   !---------------------------------------------------------------------------------------!
+   !     Now I decide which category the variable falls in. Currently only real vectors    !
+   ! and arrays and all scalars are stored with special dimension flag. Otherwise, we save !
+   ! the variable with the default 99 category, which currently means "ignore me".         !
+   !     Rank is the rank of each array (0 being a scalar, 1 a 1-D vector, 2 a 2-D, and so !
+   ! on). The value assigned to idim_type is standardised for all models and the look-up   !
+   ! table is available at ${MEVI_ROOT}/doc/dimension_table.txt.                           !
+   !---------------------------------------------------------------------------------------!
+   !----- Character, only scalars are considered ------------------------------------------!
+   if (xtype == NF90_CHAR .and. ndims == 1) then
+      idim_type = 90
+      rank      = 0 
+   !----- Integer, only scalars are considered --------------------------------------------!
+   elseif (xtype == NF90_INT .and. ndims == 1) then
+      idim_type = 80
+      rank      = 0
+   !----- Real, scalar, vectors and higher-rank arrays are considered, check everything ---!
+   elseif (xtype == NF90_FLOAT) then
+      select case(ndims)
+      !------------------------------------------------------------------------------------!
+      !   Time-dependent scalar, just set up idim_type and we are all set.                 !
+      !------------------------------------------------------------------------------------!
+      case (1)
+         idim_type = 70
+         rank      = 0
+
+      !------------------------------------------------------------------------------------!
+      !   Single rank vector, checking which dimension it is associated. This will not     !
+      ! crash if the vector has a non-spatial dimension, we will simply ignore it and      !
+      ! leave the dimension to be 99.                                                      !
+      !------------------------------------------------------------------------------------!
+      case (2) !----- The variable has one dimension. We will figure out which one... -----!
+         rank      = 1
+         if (dimids(1) == idnnzp) then
+            idim_type = 13
+            dims(1) = nnzp(ngrid)
+         elseif (dimids(1) == idnnzpst) then
+            idim_type = 13
+            dims(1)    = nnzp(ngrid)
+            stagger(1) = .true.
+         elseif (dimids(1) == idnzg) then
+            idim_type = 14
+            dims(1) = nzg
+         elseif (dimids(1) == idnnxp) then
+            idim_type = 11
+            dims(1) = nnxp(ngrid)
+         elseif (dimids(1) == idnnxpst) then
+            idim_type = 11
+            dims(1)    = nnxp(ngrid)
+            stagger(1) = .true.
+         elseif (dimids(1) == idnnyp) then
+            idim_type = 12
+            dims(1) = nnyp(ngrid)
+         elseif (dimids(1) == idnnypst) then
+            idim_type = 12
+            dims(1)    = nnyp(ngrid)
+            stagger(1) = .true.
+         end if
+
+      !------------------------------------------------------------------------------------!
+      !   2D fields. Currently only XY variables are known...                              !
+      !------------------------------------------------------------------------------------!
+      case (3)
+         rank = 2
+         !----- Currently the only 2D dimension is X and Y. -------------------------------!
+         idim_type = 22
+
+         !----- X dimension ---------------------------------------------------------------!
+         if (dimids(1) == idnnxp) then
+            dims(1) = nnxp(ngrid)
+         elseif (dimids(1) == idnnxpst) then
+            dims(1) = nnxp(ngrid)
+            stagger(1) = .true.
+         else 
+            write (unit=*,fmt='(3(a,1x,i5,1x))')                                           &
+               'Dimids(1)=',dimids(1),'IDNNXP=',idnnxp,'IDNNXPST=',idnnxpst
+            call fatal_error ('X Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+
+         !----- Y dimension ---------------------------------------------------------------!
+         if (dimids(2) == idnnyp) then
+            dims(2) = nnyp(ngrid)
+         elseif (dimids(2) == idnnypst) then
+            dims(2) = nnyp(ngrid)
+            stagger(2) = .true.
+         else 
+            call fatal_error ('Y Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+
+
+      !------------------------------------------------------------------------------------!
+      !   3D fields. There are some possible idim_type, but all of them  have X and Y,     !
+      !              what changes is the third dimension.                                  !
+      !------------------------------------------------------------------------------------!
+      case (4)
+         rank = 3
+         !----- X dimension ---------------------------------------------------------------!
+         if (dimids(1) == idnnxp) then
+            dims(1) = nnxp(ngrid)
+         elseif (dimids(1) == idnnxpst) then
+            dims(1) = nnxp(ngrid)
+            stagger(1) = .true.
+         else 
+            call fatal_error ('X Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+         !----- Y dimension ---------------------------------------------------------------!
+         if (dimids(2) == idnnyp) then
+            dims(2) = nnyp(ngrid)
+         elseif (dimids(2) == idnnypst) then
+            dims(2) = nnyp(ngrid)
+            stagger(2) = .true.
+         else 
+            call fatal_error ('Y Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+
+         !----- 3rd dimension -------------------------------------------------------------!
+         if (dimids(3) == idnnzp) then
+            idim_type = 33
+            dims(3) = nnzp(ngrid)
+         elseif (dimids(3) == idnnzpst) then
+            idim_type = 33
+            dims(3) = nnzp(ngrid)
+            stagger(3) = .true.
+         elseif (dimids(3) == idnzg) then
+            idim_type = 34
+            dims(3)   = nzg
+         elseif (dimids(3) == idnclouds) then
+            idim_type = 36
+            dims(3)   = nclouds
+         elseif (dimids(3) == idnpatch) then
+            idim_type = 37
+            dims(3)   = npatch
+         else 
+            call fatal_error ('Y Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+
+      !------------------------------------------------------------------------------------!
+      !     4D fields. This is rarely available, and in fact I am not even sure about the  !
+      !                order that these dimensions should appear in the netcdf file. I am  !
+      !                leaving here more as an example in case 4D variables appear.        !
+      !------------------------------------------------------------------------------------!
+      case (5)
+         rank = 4
+         !----- X dimension ---------------------------------------------------------------!
+         if (dimids(1) == idnnxp) then
+            dims(1) = nnxp(ngrid)
+         elseif (dimids(1) == idnnxpst) then
+            dims(1) = nnxp(ngrid)
+            stagger(1) = .true.
+         else 
+            call fatal_error ('X Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+         !----- Y dimension ---------------------------------------------------------------!
+         if (dimids(2) == idnnyp) then
+            dims(2) = nnyp(ngrid)
+         elseif (dimids(2) == idnnypst) then
+            dims(2) = nnyp(ngrid)
+            stagger(2) = .true.
+         else 
+            call fatal_error ('Y Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+
+         !----- 3rd dimension -------------------------------------------------------------!
+         if (dimids(3) == idnzg) then
+            dims(3)   = nzg
+         else 
+            call fatal_error ('Y Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+
+         !----- 4th dimension -------------------------------------------------------------!
+         if (dimids(4) == idnpatch) then
+            idim_type = 47
+            dims(4)   = npatch
+         else 
+            call fatal_error ('Y Dimension is wrong for '//trim(varname)//'!!!'            &
+                             ,'wrf_load_var_table','wrf_fill_infotable.F90')
+         end if
+      end select
+  end if
+#else
+    varname   = missflg_char
+    npointer  = missflg_int
+    idim_type = missflg_int
+    ngrid     = missflg_int
+    nvalues   = missflg_int
+    rank      = missflg_int
+    dims      = missflg_int
+    stagger   = .false.
+#endif
+
+
+   return
+end subroutine wrf_load_var_table

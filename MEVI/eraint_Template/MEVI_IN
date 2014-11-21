@@ -1,0 +1,103 @@
+&MEVI_OPTIONS
+
+!------------------------------------------------------------------------------------------!
+!  General options                                                                         !
+!------------------------------------------------------------------------------------------!
+   NL%INTYPE = 'eranat'  ! Type of input data. Available options are (case insensitive):
+                         ! -> RAMS   - RAMS or BRAMS files
+                         ! -> WRF    - WRF netcdf files
+                         ! -> GRADS  - GrADS files
+                         ! -> ECMWF  - ECMWF files downloaded from the ECMWF website
+                         ! -> ERANAT - ECMWF files downloaded from the CISL website
+                         ! -> NCEP   - NCEP reanalyisis downloaded from CDC files.
+                         ! -> HDF5   - Generic HDF5 file (don't use this for RAMS HDF5)
+                         ! -> NETCDF - Generic NetCDF file (don't use this for WRF NetCDF)
+
+   NL%OUTTYPE = 'ralph2' ! Type of output data. Available options are (case insensitive):
+                         ! -> Vis5D  - Vis5D (Vis5D+) files
+                         ! -> RALPH2 - BRAMS input file for boundary conditions (dp-p files)
+                         ! -> GRADS  - GrADS files
+                       
+   !---------------------------------------------------------------------------------------!
+   !    Prefix for input files. If you prefer, you can create a file containing the list   !
+   ! of files (with full path) you want. This file must be called filelist.inp, and in     !
+   ! this case NL%INPREF should be set as '(Path)/filelist.inp. For BRAMS original vfm,    !
+   ! list only the -head.txt files.                                                        !
+   !---------------------------------------------------------------------------------------!
+   NL%INPREF = '.'
+
+   !----- Prefix for output files ---------------------------------------------------------!
+   NL%OUTPREF='./eraint'
+   
+   !---------------------------------------------------------------------------------------!
+   !     Variable and grid configuration                                                   !
+   !---------------------------------------------------------------------------------------!
+   NL%NVARS = 5    ! Number of variables to include in the output
+   
+   !---------------------------------------------------------------------------------------!
+   !    Variables to include.  If you are running from (B)RAMS and WRF use the look-up     !
+   ! table, otherwise make sure to include only variables that are present in the file...  !
+   !    If you chose the output format to be RALPH2, then you must be really careful, and  !
+   ! make sure you include 5 variables only, and they ought to be in this order.           !
+   ! 1.  Zonal wind                                                                 [ m/s] !
+   ! 2.  Meridional wind                                                            [ m/s] !
+   ! 3.  Temperature                                                                [   K] !
+   ! 4.  Geopotential height                                                        [   m] !
+   ! 5.  Relative humidity                                                          [  --] !
+   !---------------------------------------------------------------------------------------!
+   NL%VARS = 'U','V','T','Z','R'
+   !---------------------------------------------------------------------------------------!
+
+   !---------------------------------------------------------------------------------------!
+   !     Coordinates to be included.  If you prever providing the grid points, then just   !
+   ! make the variables in this block really broad, MEVI will always constrain by the      !
+   ! smallest domain in each dimension.                                                    !
+   !---------------------------------------------------------------------------------------!
+   NL%LONW =  -92. ! Westermost   longitude allowed to be included
+   NL%LONE =  -25. ! Easternmost  longitude allowed to be included
+   NL%LATS =  -45. ! Southernmost latitude  allowed to be included
+   NL%LATN =   18. ! Northernmost latitude  allowed to be included
+   NL%LEVB = 1000. ! Bottommost pressure allowed to be included
+   NL%LEVT =    1. ! Topmost pressure allowed to be included
+   !---------------------------------------------------------------------------------------!
+
+
+   !---------------------------------------------------------------------------------------!
+   !    Grid points to be included.  If you prefer providing coordinates make this block   !
+   ! very broad, MEVI will always constrain by the smallest domain in each dimension.      !
+   !---------------------------------------------------------------------------------------!
+   NL%I1ST  = 1      ! First longitude grid point to consider
+   NL%ILAST = 100000 ! Last  longitude grid point to consider
+   NL%J1ST  = 1      ! First latitude  grid point to consider
+   NL%JLAST = 100000 ! Last  latitude  grid point to consider
+   NL%K1ST  = 1      ! First vertical  grid point to consider
+   NL%KLAST = 100000 ! Last  vertical  grid point to consider
+   !---------------------------------------------------------------------------------------!
+
+
+   !---------------------------------------------------------------------------------------!
+   !    Time grid points to consider.  Only "grid-point" style is available as of now.     !
+   !---------------------------------------------------------------------------------------!
+   NL%TTTA  = 1      ! First time to consider 
+   NL%TTTZ  = 100000 ! Last  time to consider 
+   !---------------------------------------------------------------------------------------!
+
+
+   !---------------------------------------------------------------------------------------!
+   !     This is the number of points to "skip" in case you don't want all points to be    !
+   ! used.                                                                                 !
+   !---------------------------------------------------------------------------------------!
+   NL%STRINX = 1 ! Number of points to skip in longitude
+   NL%STRINY = 1 ! Number of points to skip in latitude
+   NL%STRINZ = 1 ! Number of points to skip in pressure
+   !---------------------------------------------------------------------------------------!
+
+
+   !----- These variables are used by (B)RAMS output only ---------------------------------!
+   NL%VFMFRMT = .true.      ! (B)RAMS data is in VFM : (.true./.false.)
+                            !     if false, assume hdf5.
+
+   NL%POLAR2LONLAT = .true. ! Interpolate data to regular lon/lat (.true./.false.)
+   !---------------------------------------------------------------------------------------!
+
+/ ! End of MEVI_OPTIONS namelist

@@ -1,0 +1,48 @@
+$settings
+
+inpfrmt = 1
+
+ctlfile  = '/n/circelfs/moorcroft_lab/mlongo/MEVI/aux/topov5d/run/input/dem030_ascii.dat',
+v5dfile = 'topo30km.topo',
+
+topo   =   'topo',
+land   =   'land',
+
+usethistime = 1,
+
+scale = 'none',
+
+beta0 = 1,
+beta1 = 586.9304,
+beta2 = 0,
+
+$end
+
+!------------------------------------------------------------------------------------------!
+! Explanation of the above variables                                                       !
+!                                                                                          !
+! inpfrmt     | 0 - GrADS; 1- ascii, in USGS style                                         !
+!                                                                                          !
+! ctlfile     | Name (with full path if necessary) of the ctl file; Maximum 200 characters;!
+!             |    If inpfrmt = 1, then ctlfile is actually the txt file.                  !
+!                                                                                          !
+! v5dfile     | Name (with full path if necessary) of the v5d file; Maximum 200 characters;!
+!                                                                                          !
+!                                                                                          !
+! topo        |  Name of the variable that corresponds to the topography                   !
+! land        |  Name of the variable that corresponds to the land mask                    !
+!                                                                                          !
+! usethistime |  Time I should use. This is to consider the case in which the first time is!
+!             |  is a bad choice. If you had no idea what I am talking about, 1 is         !
+!             |  probably just fine.                                                       !
+!                                                                                          !
+! scale       |  String denoting the kind of rescaling you want for the topography         !
+!             |  Notation: y= rescaled topography, x=original data, beta? - coefficients   !
+!             |            (beta2 will be ignored if you use linear, sqrt or log
+!             |  none      | y=x                                                           ! 
+!             |  linear    | y=beta0+beta1 x                                               ! 
+!             |  quadratic | y=beta0+beta1 x + beta2 x²                                    ! 
+!             |  sqrt      | y=beta0+beta1*sqrt(x). if x<0, then y=beta0-beta1*sqrt(-x)    ! 
+!             |  exp       | y=beta0+beta1*exp(beta2*x)                                    ! 
+!             |  log or ln | y=beta0+beta1*ln(x). If x < beta0, then y=x                   ! 
+!------------------------------------------------------------------------------------------!

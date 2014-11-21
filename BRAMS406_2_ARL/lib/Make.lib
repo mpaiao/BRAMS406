@@ -1,0 +1,93 @@
+#
+#        Define site and machine specific parameters.
+#
+#       Machine type:
+#                      'IBM'       (RS/6000) 
+#                      'STARDENT'  (STARDENT Titan)
+#                      'SUN'       (SUN Sparc)
+#                      'HP'        (HP Model 7xx)
+#                      'ALPHA'     (DEC ALPHA)
+#                      'SGI'       (Silicon Graphics)
+#                      'VAX'       (DEC VAX/VMS)
+#                      'CRAY'      (CRAY/UNICOS)
+#                      'CONVEX     (CONVEX/UNICOS)
+
+.SUFFIXES: .c .f .o .f90 .F90
+
+INCLUDES = .
+LIB = .
+
+# PC_Linux
+#CMACH=PC_LINUX1
+FORT_COMP= mpif90
+#FORT_COMP=gfortran
+# SUN
+CMACH=PC_LINUX1
+#FORT_COMP= f90
+
+C_COMP=mpicc
+C_OPTS= -c   
+FORT_OPTS= -c -O3 -CB -Vaxlib -traceback -assume byterecl
+
+FC_INCS= -I$(INCLUDES)
+
+ARCHIVE=ar rs
+RANLIB =ranlib
+
+#
+#     Define library archive and  model, VAN, and REVU 
+#            archive and executable file names.
+#
+
+LIBRAMS_F=$(LIB)/librams_f.a
+LIBRAMS_C=$(LIB)/librams_c.a
+LIBRAMS=$(LIBRAMS_F) $(LIBRAMS_C)
+LIBRAMS=$(LIB)/librams.a
+
+#
+#        Define library source files
+#
+
+F_SOURCE = \
+        $(LIB)/anheader.f90 \
+        $(LIB)/somevars.f90 \
+        $(LIB)/hvlib_arl.f90 \
+        $(LIB)/rcio_arl.f90 \
+        $(LIB)/rcomp.f90 \
+        $(LIB)/revugrads.f90 \
+        $(LIB)/utils_f.f90 \
+        $(LIB)/misc_lib.F90 \
+        $(LIB)/polarst.f90
+
+C_SOURCE = $(LIB)/utils_c.c
+
+
+
+#==============================================================================
+
+all: $(LIBRAMS_F) $(LIBRAMS_C)
+#	rm -f *.o core
+#	ar x $(LIBRAMS_F)
+#	ar x $(LIBRAMS_C)
+	ar rs $(LIBRAMS) *.o
+#	mv an_header.mod ..
+#	rm -f *.o core
+
+#==============================================================================
+
+$(LIBRAMS_F): $(F_SOURCE)
+	$(FORT_COMP) $(FORT_OPTS) -D$(CMACH) $(FC_INCS) $(?)
+#	$(ARCHIVE) $(LIBRAMS_F) $(?F:.f90=.o)
+#	$(RANLIB) $(LIBRAMS_F)
+#	echo Finished building FORTRAN part === $(LIBRAMS_F)
+#	rm -f $(?F:.f90=.o)
+
+$(LIBRAMS_C): $(C_SOURCE)
+	$(C_COMP) $(C_OPTS) -D$(CMACH) $(FC_INCS) $(?)
+#	$(ARCHIVE) $(LIBRAMS_C) $(?F:.c=.o)
+#	$(RANLIB) $(LIBRAMS_C)
+#	echo Finished building C part === $(LIBRAMS_C)
+#	rm -f $(?F:.c=.o)
+
+clean:
+	rm -f *.o librams.a

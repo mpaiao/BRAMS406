@@ -1,0 +1,71 @@
+#----------------------------------------------------------------
+# University of Houston
+# Air Quality Modeling and Monitoring Center
+# 218 Old Science Building
+# Houston, TX 77204-5048
+# USA
+#
+# email: sbkim@math.uh.edu (Dr. Seung-Bum Kim)
+#        dwbyun@math.uh.edu (Dr. Daewon W. Byun)
+#----------------------------------------------------------------
+#adapted by CHG
+# # of BKSP set to 1 (to not use dummy scalars at index 1, and dummy fluxes at index nnxp etc)
+/n/Moorcroft_Lab/Users/mlongo/OPERA-BRAMS406/stilt_mn00/brams406_2_arl.exe << ieof
+RAMS Grid ID       |1
+# of layers in Z   |41
+# of BKSP          |1
+Start/end date     |199901020000 199901040000
+OUTPUT file        |edbrams_199901020000
+RAMS Header file   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-000000-head.txt
+Time interval(sec) |3600
+#RAMS files to proc|49
+RAMS files         |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-000000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-010000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-020000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-030000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-040000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-050000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-060000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-070000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-080000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-090000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-100000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-110000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-120000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-130000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-140000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-150000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-160000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-170000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-180000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-190000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-200000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-210000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-220000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-02-230000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-000000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-010000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-020000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-030000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-040000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-050000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-060000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-070000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-080000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-090000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-100000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-110000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-120000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-130000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-140000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-150000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-160000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-170000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-180000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-190000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-200000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-210000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-220000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-03-230000-g1.vfm
+                   |/n/data/moorcroft_lab/mlongo/EDBRAMS/wetamc/analy/wetamc-A-1999-01-04-000000-g1.vfm
+ieof

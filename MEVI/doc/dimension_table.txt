@@ -1,0 +1,44 @@
+For the memory order, we use the following notation (based on WRF registry):
+X: Longitude
+Y: Latitude
+Z: Vertical
+L: Vertical layers
+U: Landuse class
+C: Cloud spectral size (BRAMS only) or ensemble dimension (WRF only)
+S: Snow/water layers   (BRAMS only)
+W: Wave number         (BRAMS only)
+
+!------------------------------------------------------------------------------------------!
+!  PS:                                                                                     !
+!  1. Stagger information is stored in a separate variable.                                !
+!  2. For VIS-5D convertion, only variables between 21 and 49 will be considered (other    !
+!     variables may be used to define the domain though).                                  !
+!------------------------------------------------------------------------------------------!
+|==========================================================================================|
+| MEVI ID |    Rank | Variable type |  RAMS type             | WRF Memory Order            |
+|==========================================================================================|
+|      11 |       1 |          Real | Inexistent             | X (Rare or inexistent)      |
+|      12 |       1 |          Real | Inexistent             | Y (Rare or inexistent)      |
+|      13 |       1 |          Real | Inexistent             | Z                           |
+|      14 |       1 |          Real | Inexistent             | L                           |
+|---------+---------+---------------+------------------------+-----------------------------|
+|      22 |       2 |          Real | 2  -  XY               | XY                          |
+|---------+---------+---------------+------------------------+-----------------------------|
+|      33 |       3 |          Real | 3  -  XYZ              | XYZ                         |
+|      34 |       3 |          Real | Inexistent             | XYL                         |
+|      35 |       3 |          Real | 7  -  XYW              | Inexistent                  |
+|      36 |       3 |          Real | 9  -  XYC              | XYC                         |
+|      37 |       3 |          Real | 6  -  XYU              | XYU                         |
+|---------+---------+---------------+------------------------+-----------------------------|
+|      46 |       4 |          Real | 8  -  XYZC             | Inexistent                  |
+|      47 |       4 |          Real | 4  -  XYLU             | XYLU (No example)           |
+|      48 |       4 |          Real | 5  -  XYSU             | Inexistent                  |
+|---------+---------+---------------+------------------------+-----------------------------|
+|      62 |       2 |         Short | NCEP only, equivalent to 22 but needs type convers.  |
+|      63 |       3 |         Short | NCEP only, equivalent to 33 but needs type convers.  |
+|---------+---------+---------------+------------------------+-----------------------------|
+|      70 |       0 |          Real | Inexistent             | Scalar                      |
+|      80 |       0 |       Integer | Inexistent             | Scalar                      |
+|      90 |       0 |     Character | Inexistent             | Scalar                      |
+|      99 |       0 |      Any type | Inexistent             | Non-spatial arrays, ignored |
+|==========================================================================================|
