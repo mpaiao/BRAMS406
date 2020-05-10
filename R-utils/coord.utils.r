@@ -1,8 +1,8 @@
 #==========================================================================================#
 #==========================================================================================#
-#     This function finds the corners of a list of coordinates.                            #
+#     This function finds the vertices of a list of coordinates.                           #
 #------------------------------------------------------------------------------------------#
-four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
+four.vertices <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
 
    #----- Check whether y has been provided.  In case not, check the x object. ------------#
    if (is.null(y)){
@@ -17,7 +17,6 @@ four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
       #------------------------------------------------------------------------------------#
 
 
-
       #----- Grab the columns with the x and y coordinates. -------------------------------#
       if (ncol(xy) < 2){
          stop("xy must have at least two columns!")
@@ -25,7 +24,6 @@ four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
          names(xy) = tolower(names(xy))
          if ("x" %in% names(xy)){x=xy$x}else{x=xy[[1]]}
          if ("y" %in% names(xy)){y=xy$y}else{y=xy[[2]]}
-         
       }#end if
       #------------------------------------------------------------------------------------#
    }else if (length(x) != length(y)){
@@ -48,41 +46,41 @@ four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
                             )#end union
                      )#end union
               )#end union
-   corner = xy[idx,]
+   vertex = xy[idx,]
    #---------------------------------------------------------------------------------------#
 
 
    #---------------------------------------------------------------------------------------#
-   #    Find the "ideal" corners, i.e., the corners of a rectangle that contains all       #
+   #    Find the "ideal" vertices, i.e., the vertices of a rectangle that contains all     #
    # points and is perfectly aligned with the x and y axes.                                #
    #---------------------------------------------------------------------------------------#
-   xa               = min(corner$x)
-   xz               = max(corner$x)
-   ya               = min(corner$y)
-   yz               = max(corner$y)
+   xa               = min(vertex$x)
+   xz               = max(vertex$x)
+   ya               = min(vertex$y)
+   yz               = max(vertex$y)
    domain           = data.frame(x=c(xa,xa,xz,xz),y=c(ya,yz,yz,ya))
-   rownames(domain) = c("sw","nw","ne","se")
+   rownames(domain) = c("00","0Y","XY","X0")
    #---------------------------------------------------------------------------------------#
 
 
 
    #---------------------------------------------------------------------------------------#
-   #     Decide the corner labels based on the closest distance to the "ideal" corners,    #
-   # and label them according to the minimum distance to the perfect corners.              #
+   #     Decide the vertex labels based on the closest distance to the "ideal" vertices,   #
+   # and label them according to the minimum distance to the perfect vertices.             #
    #---------------------------------------------------------------------------------------#
-   idx.sw = which.min(sqrt((corner$x-domain$x[1])^2+(corner$y-domain$y[1])^2))
-   idx.nw = which.min(sqrt((corner$x-domain$x[2])^2+(corner$y-domain$y[2])^2))
-   idx.ne = which.min(sqrt((corner$x-domain$x[3])^2+(corner$y-domain$y[3])^2))
-   idx.se = which.min(sqrt((corner$x-domain$x[4])^2+(corner$y-domain$y[4])^2))
+   idx.00 = which.min(sqrt((vertex$x-domain$x[1])^2+(vertex$y-domain$y[1])^2))
+   idx.0Y = which.min(sqrt((vertex$x-domain$x[2])^2+(vertex$y-domain$y[2])^2))
+   idx.XY = which.min(sqrt((vertex$x-domain$x[3])^2+(vertex$y-domain$y[3])^2))
+   idx.X0 = which.min(sqrt((vertex$x-domain$x[4])^2+(vertex$y-domain$y[4])^2))
    #---------------------------------------------------------------------------------------#
 
 
    #---------------------------------------------------------------------------------------#
-   #     Re-order the corners so the corners always go clockwise, starting from the SW     #
-   # corner.                                                                               #
+   #     Re-order the vertices so the vertices always go clockwise, starting from the      #
+   # X=0,Y=0 vertex.                                                                       #
    #---------------------------------------------------------------------------------------#
-   corner           = corner[c(idx.sw,idx.nw,idx.ne,idx.se),]
-   rownames(corner) = c("sw","nw","ne","se")
+   vertex           = vertex[c(idx.00,idx.0Y,idx.XY,idx.X0),]
+   rownames(vertex) = c("00","Y0","XY","X0")
    #---------------------------------------------------------------------------------------#
 
 
@@ -90,15 +88,15 @@ four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
    #=======================================================================================#
    #=======================================================================================#
    #    If the point cloud has bulges, then some points may be outside the rectangle.      #
-   # Adjust each corner until to make sure everyone is included.                           #
+   # Adjust each vertex until to make sure everyone is included.                           #
    #---------------------------------------------------------------------------------------#
 
 
 
    #---------------------------------------------------------------------------------------#
-   #    Make sure that the current corners include all points.                             #
+   #    Make sure that the current vertices include all points.                            #
    #---------------------------------------------------------------------------------------#
-   out.now  = sum(! inout(pts=xy,poly=rbind(corner,corner[1,])))
+   out.now  = sum(! inout(pts=xy,poly=rbind(vertex,vertex[1,])))
    if (out.now > 0){
       #----- Print message. ---------------------------------------------------------------#
       if (verbose){
@@ -109,10 +107,10 @@ four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
 
 
       #------------------------------------------------------------------------------------#
-      #     Iterate until all points are included.  We go over each corner and expand the  #
+      #     Iterate until all points are included.  We go over each vertex and expand the  #
       # vertices, one at a time, until all points are included.                            #
       #------------------------------------------------------------------------------------#
-      ans     = corner
+      ans     = vertex
       n       = 0
       s       = 4
       while (out.now > 0 && n < 100){
@@ -122,7 +120,7 @@ four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
          out.prev = out.now
          #---------------------------------------------------------------------------------#
 
-         #----- Expand corner. ------------------------------------------------------------#
+         #----- Expand vertex. ------------------------------------------------------------#
          op        = ( (s-3) %% 4 ) + 1
          long      = ans
          long[s,]  = long[s,] + n * delta * (long[s,] - long[op,])
@@ -147,16 +145,16 @@ four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
       }#end while (out.now && n < 100)
       #------------------------------------------------------------------------------------#
    }else{
-      ans = corner
+      ans = vertex
    }#end if (out.now > 0)
    #---------------------------------------------------------------------------------------#
 
 
-   #---- Return the corners. --------------------------------------------------------------#
+   #---- Return the vertices. -------------------------------------------------------------#
    return(ans)
    #---------------------------------------------------------------------------------------#
 
-}#end function four.corners
+}#end function four.vertices
 #==========================================================================================#
 #==========================================================================================#
 
@@ -168,7 +166,7 @@ four.corners <<- function(x,y=NULL,delta=0.005,verbose=FALSE){
 #==========================================================================================#
 #     Function that creates the grid mesh.                                                 #
 #------------------------------------------------------------------------------------------#
-grid.mesh <<- function(corners,nx,ny){
+grid.mesh <<- function(vertex,nx,ny){
 
 
    #---- Find the normalised mesh. --------------------------------------------------------#
@@ -181,10 +179,10 @@ grid.mesh <<- function(corners,nx,ny){
 
 
    #----- Project the mesh onto the grid. -------------------------------------------------#
-   ee = ( (1 - xx) * (1 - yy) * corners$x[1] +      xx  * (1 - yy) * corners$x[2]
-        +      xx  *      yy  * corners$x[3] + (1 - xx) *      yy  * corners$x[4] )
-   nn = ( (1 - xx) * (1 - yy) * corners$y[1] +      xx  * (1 - yy) * corners$y[2]
-        +      xx  *      yy  * corners$y[3] + (1 - xx) *      yy  * corners$y[4] )
+   ee = ( (1 - xx) * (1 - yy) * vertex$x[1] + (1 - xx) *      yy  * vertex$x[2]
+        +      xx  *      yy  * vertex$x[3] +      xx  * (1 - yy) * vertex$x[4] )
+   nn = ( (1 - xx) * (1 - yy) * vertex$y[1] + (1 - xx) *      yy  * vertex$y[2]
+        +      xx  *      yy  * vertex$y[3] +      xx  * (1 - yy) * vertex$y[4] )
    ans      = array(data=NA,dim=c(nx+1,ny+1,2),dimnames=list(NULL,NULL,c("x","y")))
    ans[,,1] = ee
    ans[,,2] = nn
@@ -204,10 +202,10 @@ grid.mesh <<- function(corners,nx,ny){
 #==========================================================================================#
 #==========================================================================================#
 #     This function transforms normalised X;Y coordinates into native coordinates, given   #
-# the four corners of the domain (always in the SW;NW;NE;SE order).  This function doesn't #
-# assume that the shape is a rectangle.                                                    #
+# the four vertices of the domain (always clockwise, first vertex corresponding to the     #
+# X=0;Y=0 vertex).  This function doesn't assume that the shape is a rectangle.            #
 #------------------------------------------------------------------------------------------#
-norm.to.coord <<- function(x,y=NULL,corners){
+norm.to.coord <<- function(x,y=NULL,vertex,xscl=1,yscl=1){
 
    #----- Check whether y has been provided.  In case not, check the x object. ------------#
    if (is.null(y)){
@@ -222,6 +220,12 @@ norm.to.coord <<- function(x,y=NULL,corners){
       #------------------------------------------------------------------------------------#
 
 
+      #------------------------------------------------------------------------------------#
+      #    Save row names for later.                                                       #
+      #------------------------------------------------------------------------------------#
+      rnmout = rownames(xy)
+      #------------------------------------------------------------------------------------#
+
 
       #----- Grab the columns with the x and y coordinates. -------------------------------#
       if (ncol(xy) < 2){
@@ -235,21 +239,27 @@ norm.to.coord <<- function(x,y=NULL,corners){
       #------------------------------------------------------------------------------------#
    }else if (length(x) != length(y)){
       stop("x and y must have the same length!")
+   }else{
+      #------------------------------------------------------------------------------------#
+      #    Save row names for later.                                                       #
+      #------------------------------------------------------------------------------------#
+      rnmout = names(x)
+      #------------------------------------------------------------------------------------#
    }#end if
-   #----- Turn data set to a data frame. --------------------------------------------------#
+   #----- Turn data set to a data frame and normalise to 0-1. -----------------------------#
    xy = data.frame(x = x, y = y)
    #---------------------------------------------------------------------------------------#
 
 
 
    #---------------------------------------------------------------------------------------#
-   #    Make sure that 'corners' is a 4x2 matrix.
+   #    Make sure that 'vertex' is a 4x2 matrix.                                           #
    #---------------------------------------------------------------------------------------#
    #----- Coerce data to a data frame. ----------------------------------------------------#
-   if (! is.data.frame(corners)){
-      corners = try(as.data.frame(corners),silent=TRUE)
-      if ("try-error" %in% corners){
-         stop("corners cannot be coerced to a data frame.")
+   if (! is.data.frame(vertex)){
+      vertex = try(as.data.frame(vertex),silent=TRUE)
+      if ("try-error" %in% vertex){
+         stop("vertex cannot be coerced to a data frame.")
       }#end if
    }#end if
    #---------------------------------------------------------------------------------------#
@@ -257,12 +267,13 @@ norm.to.coord <<- function(x,y=NULL,corners){
 
 
    #----- Grab the columns with the x and y coordinates. ----------------------------------#
-   if (any(dim(corners) != c(4,2))){
-      stop("corners must have four rows and two columns!")
+   if (any(dim(vertex) != c(4,2))){
+      stop("vertex must have four rows and two columns!")
    }else{
-      names(corners) = tolower(names(corners))
-      if ("x" %in% names(corners)) names(corners)[1] = "x"
-      if ("y" %in% names(corners)) names(corners)[2] = "y"
+      names(vertex) = tolower(names(vertex))
+      if ("x" %in% names(vertex)){vx=vertex$x}else{vx=vertex[[1]]}
+      if ("y" %in% names(vertex)){vy=vertex$y}else{vy=vertex[[2]]}
+      vertex = data.frame(x=vx,y=vy)
    }#end if
    #---------------------------------------------------------------------------------------#
 
@@ -270,21 +281,22 @@ norm.to.coord <<- function(x,y=NULL,corners){
    #---------------------------------------------------------------------------------------#
    #     Find some auxiliary variables.                                                    #
    #---------------------------------------------------------------------------------------#
-   xx = xy$x
-   yy = xy$y
+   xx = xy$x / xscl
+   yy = xy$y / yscl
    #---------------------------------------------------------------------------------------#
 
 
    #----- Project the points onto the normalised grid. ------------------------------------#
-   ee = ( (1 - xx) * (1 - yy) * corners$x[1] +      xx  * (1 - yy) * corners$x[2]
-        +      xx  *      yy  * corners$x[3] + (1 - xx) *      yy  * corners$x[4] )
-   nn = ( (1 - xx) * (1 - yy) * corners$y[1] +      xx  * (1 - yy) * corners$y[2]
-        +      xx  *      yy  * corners$y[3] + (1 - xx) *      yy  * corners$y[4] )
+   ee = ( (1 - xx) * (1 - yy) * vertex$x[1] + (1 - xx) *      yy  * vertex$x[2]
+        +      xx  *      yy  * vertex$x[3] +      xx  * (1 - yy) * vertex$x[4] )
+   nn = ( (1 - xx) * (1 - yy) * vertex$y[1] + (1 - xx) *      yy  * vertex$y[2]
+        +      xx  *      yy  * vertex$y[3] +      xx  * (1 - yy) * vertex$y[4] )
    #---------------------------------------------------------------------------------------#
 
 
    #---- Return a data frame with the normalised variables. -------------------------------#
    ans = data.frame(x=ee,y=nn)
+   rownames(ans) = rnmout
    return(ans)
    #---------------------------------------------------------------------------------------#
 }#end norm.to.coord
@@ -300,12 +312,11 @@ norm.to.coord <<- function(x,y=NULL,corners){
 #==========================================================================================#
 #     This function normalises the X and Y coordinates of quadrilaters.  It doesn't        #
 # assume that the shape is a rectangle.                                                    #
-#     This function normalises native coordinates (X 0-1; Y 0-1), given the four corners   #
-# of the domain (always in the SW;NW;NE;SE order).  This function doesn't assume that the  #
-# shape is a rectangle.                                                                    #
+#     This function normalises native coordinates (X 0-1; Y 0-1), given the four vertices  #
+# of the domain (always in the clockwise order, first vertex must be the X=0,Y=0 one).     #
+# This function doesn't assume that the shape is a rectangle.                              #
 #------------------------------------------------------------------------------------------#
-coord.to.norm <<- function(x,y=NULL,corners){
-
+coord.to.norm <<- function(x,y=NULL,vertex,xscl=1,yscl=1){
    #----- Check whether y has been provided.  In case not, check the x object. ------------#
    if (is.null(y)){
       xy = x
@@ -319,6 +330,11 @@ coord.to.norm <<- function(x,y=NULL,corners){
       #------------------------------------------------------------------------------------#
 
 
+      #------------------------------------------------------------------------------------#
+      #    Save row names for later.                                                       #
+      #------------------------------------------------------------------------------------#
+      rnmout = rownames(xy)
+      #------------------------------------------------------------------------------------#
 
       #----- Grab the columns with the x and y coordinates. -------------------------------#
       if (ncol(xy) < 2){
@@ -332,6 +348,12 @@ coord.to.norm <<- function(x,y=NULL,corners){
       #------------------------------------------------------------------------------------#
    }else if (length(x) != length(y)){
       stop("x and y must have the same length!")
+   }else{
+      #------------------------------------------------------------------------------------#
+      #    Save row names for later.                                                       #
+      #------------------------------------------------------------------------------------#
+      rnmout = names(x)
+      #------------------------------------------------------------------------------------#
    }#end if
    #----- Turn data set to a data frame. --------------------------------------------------#
    xy = data.frame(x = x, y = y)
@@ -340,13 +362,13 @@ coord.to.norm <<- function(x,y=NULL,corners){
 
 
    #---------------------------------------------------------------------------------------#
-   #    Make sure that 'corners' is a 4x2 matrix.
+   #    Make sure that 'vertex' is a 4x2 matrix.
    #---------------------------------------------------------------------------------------#
    #----- Coerce data to a data frame. ----------------------------------------------------#
-   if (! is.data.frame(corners)){
-      corners = try(as.data.frame(corners),silent=TRUE)
-      if ("try-error" %in% corners){
-         stop("corners cannot be coerced to a data frame.")
+   if (! is.data.frame(vertex)){
+      vertex = try(as.data.frame(vertex),silent=TRUE)
+      if ("try-error" %in% vertex){
+         stop("vertex cannot be coerced to a data frame.")
       }#end if
    }#end if
    #---------------------------------------------------------------------------------------#
@@ -354,12 +376,13 @@ coord.to.norm <<- function(x,y=NULL,corners){
 
 
    #----- Grab the columns with the x and y coordinates. ----------------------------------#
-   if (any(dim(corners) != c(4,2))){
-      stop("corners must have four rows and two columns!")
+   if (any(dim(vertex) != c(4,2))){
+      stop("vertex must have four rows and two columns!")
    }else{
-      names(corners) = tolower(names(corners))
-      if ("x" %in% names(corners)) names(corners)[1] = "x"
-      if ("y" %in% names(corners)) names(corners)[2] = "y"
+      names(vertex) = tolower(names(vertex))
+      if ("x" %in% names(vertex)){vx=vertex$x}else{vx=vertex[[1]]}
+      if ("y" %in% names(vertex)){vy=vertex$y}else{vy=vertex[[2]]}
+      vertex = data.frame(x=vx,y=vy)
    }#end if
    #---------------------------------------------------------------------------------------#
 
@@ -367,43 +390,197 @@ coord.to.norm <<- function(x,y=NULL,corners){
    #---------------------------------------------------------------------------------------#
    #     Find some auxiliary variables.                                                    #
    #---------------------------------------------------------------------------------------#
-   et = xy$x         - corners$x[1]
-   eb = corners$x[4] - corners$x[1]
-   ec = corners$x[3] - corners$x[1]
-   ed = corners$x[2] - corners$x[1]
-   e3 = ec - eb - ed
-   nt = xy$y         - corners$y[1]
-   nb = corners$y[4] - corners$y[1]
-   nc = corners$y[3] - corners$y[1]
-   nd = corners$y[2] - corners$y[1]
-   n3 = nc - nb - nd
+   et = xy$x        - vertex$x[1]
+   e2 = vertex$x[2] - vertex$x[1]
+   e3 = vertex$x[3] - vertex$x[2] - vertex$x[4] + vertex$x[1]
+   e4 = vertex$x[4] - vertex$x[1]
+   nt = xy$y        - vertex$y[1]
+   n2 = vertex$y[2] - vertex$y[1]
+   n3 = vertex$y[3] - vertex$y[2] - vertex$y[4] + vertex$y[1]
+   n4 = vertex$y[4] - vertex$y[1]
    #---------------------------------------------------------------------------------------#
 
 
    #---------------------------------------------------------------------------------------#
-   #    Find coefficients for quadratic formula.                                           #
+   #    First, find out whether this equation is quadratic or not.                         #
    #---------------------------------------------------------------------------------------#
-   aa = (nd * e3 - ed * n3)
-   bb = ( nd * eb - nb * ed + n3 * et - nt * e3 ) / aa
-   cc = ( nb * et - nt * eb )  / aa
-   #---------------------------------------------------------------------------------------#
+   aa         = (e3 * n2 - e2 * n3)
+   if (aa == 0.){
+      #----- Not quadratic. ---------------------------------------------------------------#
+      yy = - ( et * n4 - e4 * nt ) / ( e4 * n2 - e2 * n4 + et * n3 - e3 * nt )
+      xx = (et - yy * e2) / (e4 + yy * e3)
+      #------------------------------------------------------------------------------------#
+   }else{
+      #----- Quadratic, search for the two solutions. -------------------------------------#
+      bb         = ( e4 * n2 - e2 * n4 + et * n3 - e3 * nt ) / aa
+      cc         = ( et * n4 - e4 * nt ) / aa
+      #------------------------------------------------------------------------------------#
 
 
-   #---------------------------------------------------------------------------------------#
-   #     Find the y coordinates.                                                           #
-   #---------------------------------------------------------------------------------------#
-   dd = bb * bb - 4 * cc
-   y1 = 0.5 * ( - bb - sqrt(dd) )
-   y2 = 0.5 * ( - bb + sqrt(dd) )
-   yy = ifelse( y1 %wr% c(0,1), y1, ifelse( y2 %wr% c(0,1), y2, NA) )
-   xx = (et - yy * ed) / (eb + yy * e3)
+      #------------------------------------------------------------------------------------#
+      #     Find the two possible y coordinates and the associated x coordinates (in case  #
+      # this solution is quadratic).                                                       #
+      #------------------------------------------------------------------------------------#
+      dd = bb * bb - 4 * cc
+      y1 = 0.5 * ( - bb - sqrt(dd) )
+      y2 = 0.5 * ( - bb + sqrt(dd) )
+      x1 = (et - y1 * e2) / (e4 + y1 * e3)
+      x2 = (et - y2 * e2) / (e4 + y2 * e3)
+      #------------------------------------------------------------------------------------#
+
+
+
+      #------------------------------------------------------------------------------------#
+      #     Pick the one that makes the most sense.                                        #
+      #------------------------------------------------------------------------------------#
+      one   = (x1 %wr% c(0.0,1.0)) & (y1 %wr% c(0.0,1.0))
+      two   = (x2 %wr% c(0.0,1.0)) & (y2 %wr% c(0.0,1.0))
+      three = (x1^2+y1^2) < (x2^2+y2^2)
+      xx  = ifelse(one,x1,ifelse(two,x2,ifelse(three,x1,x2)))
+      yy  = ifelse(one,y1,ifelse(two,y2,ifelse(three,y1,y2)))
+      #------------------------------------------------------------------------------------#
+   }#end if (aa == 0.)
    #---------------------------------------------------------------------------------------#
 
 
    #---- Return a data frame with the normalised variables. -------------------------------#
-   ans = data.frame(x=xx,y=yy)
+   ans = data.frame( x = xx * xscl
+                   , y = yy * yscl
+                   )#end data.frame
+   rownames(ans) = rnmout
    return(ans)
    #---------------------------------------------------------------------------------------#
 }#end coord.to.norm
 #==========================================================================================#
 #==========================================================================================#
+
+
+
+
+
+
+#==========================================================================================#
+#==========================================================================================#
+#      This function converts decimal degrees to degrees,minutes,seconds.                  #
+#------------------------------------------------------------------------------------------#
+dec2dms <<- function(lon=NULL,lat=NULL){
+
+   #----- Transform longitude into degrees, minutes, seconds. -----------------------------#
+   if (! is.null(lon)){
+      lon    = (lon + 180.) %% 360 - 180.
+      degree = sprintf("%3i"  ,floor(abs(lon))                      )
+      minute = sprintf("%2.2i",floor(abs(lon) %% 1 * 60)            )
+      second = sprintf("%2.2i",floor((abs(lon) %% 1 * 60) %% 1 * 60))
+      hemisf = ifelse(lon %>=% 0,"E","W")
+      olon   = paste0(degree,"-",minute,"\'",second,"\"",hemisf)
+      olon   = ifelse(is.finite(lon),olon,NA_character_)
+   }else{
+      olon = NULL
+   }#end if
+   #---------------------------------------------------------------------------------------#
+
+
+
+   #----- Transform latitude into degrees, minutes, seconds. ------------------------------#
+   if (! is.null(lat)){
+      degree = sprintf("%2i"  ,floor(abs(lat))                      )
+      minute = sprintf("%2.2i",floor(abs(lat) %% 1 * 60)            )
+      second = sprintf("%2.2i",floor((abs(lat) %% 1 * 60) %% 1 * 60))
+      hemisf = ifelse(lat %>=% 0,"N","S")
+      olat   = paste0(degree,"-",minute,"\'",second,"\"",hemisf)
+      olat   = ifelse(is.finite(lat),olat,NA_character_)
+   }else{
+      olat = NULL
+   }#end if
+   #---------------------------------------------------------------------------------------#
+
+
+   #---------------------------------------------------------------------------------------#
+   #     Return result.  We must check whether lon or lat have been provided.              #
+   #---------------------------------------------------------------------------------------#
+   if (is.null(lon) && is.null(lat)){
+      ans           = NULL
+   }else if (is.null(lon)){
+      ans           = olat
+      names(ans)    = names(lat)
+   }else if (is.null(lat)){
+      ans           = olon
+      names(ans)    = names(lon)
+   }else{
+      ans           = data.frame(lon=olon,lat=olat,stringsAsFactors=FALSE)
+      rownames(ans) = names(lon)
+   }#end if (is.null(lon) && is.null(lat))
+   #---------------------------------------------------------------------------------------#
+
+   return(ans)
+}#end dec2dms
+#------------------------------------------------------------------------------------------#
+
+
+
+
+
+#------------------------------------------------------------------------------------------#
+#     This function converts longitude/latitude into country names.                        #
+# This script was adapted from 
+#                                                                                          #
+# Input variables:                                                                         #
+# lon     - vector with longitudes (degrees, negative means west)                          #
+# lat     - vector with latitudes (degrees, negative means south)                          #
+# res     - map resolution to define country boundaries                                    #
+# subnatl - list of countries for which the subnational information is to be attached      #
+#           to the country name (default is none)                                          #
+#------------------------------------------------------------------------------------------#
+lonlat.2.country <<- function( lon
+                             , lat
+                             , res    = "low"
+                             , output = c("name","continent","iso")
+                             ){
+   #------ Select the output column. ------------------------------------------------------#
+   output = match.arg(output)
+   #---------------------------------------------------------------------------------------#
+
+
+   #------ Retrieve spatial point. --------------------------------------------------------#
+   countries.sp = getMap(resolution="low")
+   #---------------------------------------------------------------------------------------#
+
+   #----- Create spatial points. ----------------------------------------------------------#
+   points.sp = data.frame(x=lon,y=lat)
+   points.sp = SpatialPoints( points.sp
+                            , proj4string = CRS("+proj=longlat +datum=WGS84 +no_defs")
+                            )#end SpatialPoints
+   points.sp = spTransform(points.sp,CRSobj=proj4string(countries.sp))
+   #---------------------------------------------------------------------------------------#
+
+   #----- Find the countries. -------------------------------------------------------------#
+   info = over(points.sp,countries.sp)
+   #---------------------------------------------------------------------------------------#
+
+
+   #----- For some reason French Guiana doesn't belong to any continent... ----------------#
+   info$Stern[info$NAME %in% "French Guiana"] = "South America"
+   #---------------------------------------------------------------------------------------#
+
+
+   #----- Get indices of the polygons object containing each point. -----------------------#
+   if (output %in% "name"){
+      ans = as.character(info$NAME)
+   }else if (output %in% "continent"){
+      ans = as.character(info$Stern)
+      ans[ans %in% "Australia"     ] = "Oceania"
+      ans[ans %in% "Australasia"   ] = "Oceania"
+      ans[ans %in% "East Asia"     ] = "Asia"
+      ans[ans %in% "North Africa"  ] = "Africa"
+      ans[ans %in% "South+E Africa"] = "Africa"
+      ans[ans %in% "South Asia"    ] = "Asia"
+      ans[ans %in% "West Africa"   ] = "Africa"
+      ans[ans %in% "West Asia"     ] = "Asia"
+   }else if (output %in% "iso"){
+      ans = as.character(info$ISO_A3)
+   }#end if (output %in% "name")
+   #---------------------------------------------------------------------------------------#
+
+   return(ans)
+}#end lonlat.2.country
+#------------------------------------------------------------------------------------------#
